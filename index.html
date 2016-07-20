@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Gocelery by shicky</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Gocelery</h1>
+      <h2 class="project-tagline">Celery Distributed Task Queue in Go</h2>
+      <a href="https://github.com/shicky/gocelery" class="btn">View on GitHub</a>
+      <a href="https://github.com/shicky/gocelery/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/shicky/gocelery/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="gocelery" class="anchor" href="#gocelery" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>gocelery</h1>
+
+<p>Go Client/Server for Celery Distributed Task Queue</p>
+
+<p><a href="https://travis-ci.org/shicky/gocelery"><img src="https://travis-ci.org/shicky/gocelery.svg?branch=master" alt="Build Status"></a>
+<a href="https://coveralls.io/github/shicky/gocelery?branch=master"><img src="https://coveralls.io/repos/github/shicky/gocelery/badge.svg?branch=master" alt="Coverage Status"></a>
+<a href="https://goreportcard.com/report/github.com/shicky/gocelery"><img src="https://goreportcard.com/badge/github.com/shicky/gocelery" alt="Go Report Card"></a>
+<a href="https://godoc.org/github.com/shicky/gocelery"><img src="https://godoc.org/github.com/shicky/gocelery?status.svg" alt="GoDoc"></a>
+<a href="https://github.com/shicky/gocelery/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
+<a href="https://github.com/shicky/gocelery"><img src="https://img.shields.io/badge/made%20with-%E2%99%A1-ff69b4.svg" alt="motivation"></a></p>
+
+<h2>
+<a id="why" class="anchor" href="#why" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Why?</h2>
+
+<p>Having being involved in a number of projects migrating server from python to go, I have realized Go can help improve performance of existing python web applications.
+Celery distributed tasks are used heavily in many python web applications and this library allows you to implement celery workers in Go as well as being able to submit celery tasks in Go.</p>
+
+<p>You can also use this library as pure go distributed task queue.</p>
+
+<h2>
+<a id="go-celery-worker-in-action" class="anchor" href="#go-celery-worker-in-action" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Go Celery Worker in Action</h2>
+
+<p><img src="https://raw.githubusercontent.com/shicky/gocelery/master/demo.gif" alt="demo"></p>
+
+<h2>
+<a id="supported-brokersbackends" class="anchor" href="#supported-brokersbackends" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Supported Brokers/Backends</h2>
+
+<ul>
+<li>Redis (broker/backend)</li>
+</ul>
+
+<h2>
+<a id="celery-configuration" class="anchor" href="#celery-configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Celery Configuration</h2>
+
+<p>Celery must be configured to use <strong>json</strong> instead of default <strong>pickle</strong> encoding.
+This is because Go currently has no stable support for decoding pickle objects.
+Pass below configuration parameters to use <strong>json</strong>.</p>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c1">CELERY_TASK_SERIALIZER</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>json<span class="pl-pds">'</span></span>,
+<span class="pl-c1">CELERY_ACCEPT_CONTENT</span><span class="pl-k">=</span>[<span class="pl-s"><span class="pl-pds">'</span>json<span class="pl-pds">'</span></span>],  <span class="pl-c"># Ignore other content</span>
+<span class="pl-c1">CELERY_RESULT_SERIALIZER</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>json<span class="pl-pds">'</span></span>,
+<span class="pl-c1">CELERY_ENABLE_UTC</span><span class="pl-k">=</span><span class="pl-c1">True</span>,</pre></div>
+
+<h2>
+<a id="celery-worker-example" class="anchor" href="#celery-worker-example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Celery Worker Example</h2>
+
+<p>Run Celery Worker implemented in Go</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-c">// example/worker/main.go</span>
+
+<span class="pl-c">// Celery Task</span>
+<span class="pl-k">func</span> <span class="pl-en">add</span>(<span class="pl-v">a</span> <span class="pl-v">int</span>, <span class="pl-v">b</span> <span class="pl-v">int</span>) <span class="pl-v">int</span> {
+    <span class="pl-k">return</span> a + b
+}
+
+<span class="pl-k">func</span> <span class="pl-en">main</span>() {
+    <span class="pl-c">// create broker</span>
+    <span class="pl-smi">celeryBroker</span> <span class="pl-k">:=</span> gocelery.<span class="pl-c1">NewCeleryRedisBroker</span>(<span class="pl-s"><span class="pl-pds">"</span>localhost:6379<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>)
+    <span class="pl-c">// create backend</span>
+    <span class="pl-smi">celeryBackend</span> <span class="pl-k">:=</span> gocelery.<span class="pl-c1">NewCeleryRedisBackend</span>(<span class="pl-s"><span class="pl-pds">"</span>localhost:6379<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>)
+    <span class="pl-c">// Configure with 2 celery workers</span>
+    <span class="pl-smi">celeryClient</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> gocelery.<span class="pl-c1">NewCeleryClient</span>(celeryBroker, celeryBackend, <span class="pl-c1">2</span>)
+    <span class="pl-c">// worker.add name reflects "add" task method found in "worker.py"</span>
+    celeryClient.<span class="pl-c1">Register</span>(<span class="pl-s"><span class="pl-pds">"</span>worker.add<span class="pl-pds">"</span></span>, add)
+    <span class="pl-c">// Start Worker - blocking method</span>
+    <span class="pl-k">go</span> celeryClient.<span class="pl-c1">StartWorker</span>()
+    <span class="pl-c">// Wait 30 seconds and stop all workers</span>
+    time.<span class="pl-c1">Sleep</span>(<span class="pl-c1">30</span> * time.<span class="pl-smi">Second</span>)
+    celeryClient.<span class="pl-c1">StopWorker</span>()
+}</pre></div>
+
+<div class="highlight highlight-source-shell"><pre>go run example/worker/main.go</pre></div>
+
+<p>Submit Task from Python Client</p>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># example/test.py</span>
+
+<span class="pl-k">from</span> celery <span class="pl-k">import</span> Celery
+
+app <span class="pl-k">=</span> Celery(<span class="pl-s"><span class="pl-pds">'</span>tasks<span class="pl-pds">'</span></span>,
+    <span class="pl-v">broker</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>redis://localhost:6379<span class="pl-pds">'</span></span>,
+    <span class="pl-v">backend</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>redis://localhost:6379<span class="pl-pds">'</span></span>
+)
+
+<span class="pl-en">@app.task</span>
+<span class="pl-k">def</span> <span class="pl-en">add</span>(<span class="pl-smi">x</span>, <span class="pl-smi">y</span>):
+    <span class="pl-k">return</span> x <span class="pl-k">+</span> y
+
+<span class="pl-k">if</span> <span class="pl-c1">__name__</span> <span class="pl-k">==</span> <span class="pl-s"><span class="pl-pds">'</span>__main__<span class="pl-pds">'</span></span>:
+    <span class="pl-c"># submit celery task to be executed in Go workers</span>
+    ar <span class="pl-k">=</span> add.apply_async((<span class="pl-c1">5456</span>, <span class="pl-c1">2878</span>), <span class="pl-v">serializer</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>json<span class="pl-pds">'</span></span>)
+    <span class="pl-c1">print</span>(ar.get())</pre></div>
+
+<div class="highlight highlight-source-shell"><pre>python example/test.py</pre></div>
+
+<h2>
+<a id="celery-client-example" class="anchor" href="#celery-client-example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Celery Client Example</h2>
+
+<p>Run Celery Worker implemented in Python</p>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># example/worker.py</span>
+
+<span class="pl-k">from</span> celery <span class="pl-k">import</span> Celery
+
+app <span class="pl-k">=</span> Celery(<span class="pl-s"><span class="pl-pds">'</span>tasks<span class="pl-pds">'</span></span>,
+    <span class="pl-v">broker</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>redis://localhost:6379<span class="pl-pds">'</span></span>,
+    <span class="pl-v">backend</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>redis://localhost:6379<span class="pl-pds">'</span></span>
+)
+
+<span class="pl-en">@app.task</span>
+<span class="pl-k">def</span> <span class="pl-en">add</span>(<span class="pl-smi">x</span>, <span class="pl-smi">y</span>):
+    <span class="pl-k">return</span> x <span class="pl-k">+</span> y</pre></div>
+
+<div class="highlight highlight-source-shell"><pre><span class="pl-c1">cd</span> example
+celery -A worker worker --loglevel=debug --without-heartbeat --without-mingle</pre></div>
+
+<p>Submit Task from Go Client</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">main</span>() {
+    <span class="pl-c">// create broker</span>
+    <span class="pl-smi">celeryBroker</span> <span class="pl-k">:=</span> gocelery.<span class="pl-c1">NewCeleryRedisBroker</span>(<span class="pl-s"><span class="pl-pds">"</span>localhost:6379<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>)
+    <span class="pl-c">// create backend</span>
+    <span class="pl-smi">celeryBackend</span> <span class="pl-k">:=</span> gocelery.<span class="pl-c1">NewCeleryRedisBackend</span>(<span class="pl-s"><span class="pl-pds">"</span>localhost:6379<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>)
+    <span class="pl-c">// create client</span>
+    <span class="pl-smi">celeryClient</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> gocelery.<span class="pl-c1">NewCeleryClient</span>(celeryBroker, celeryBackend, <span class="pl-c1">0</span>)
+    <span class="pl-c">// send task</span>
+    <span class="pl-smi">asyncResult</span>, <span class="pl-smi">err</span> <span class="pl-k">:=</span> celeryClient.<span class="pl-c1">Delay</span>(<span class="pl-s"><span class="pl-pds">"</span>worker.add<span class="pl-pds">"</span></span>, <span class="pl-c1">3</span>, <span class="pl-c1">5</span>)
+    <span class="pl-k">if</span> err != <span class="pl-c1">nil</span> {
+        <span class="pl-c1">panic</span>(err)
+    }
+    <span class="pl-c">// check if result is ready</span>
+    <span class="pl-smi">isReady</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> asyncResult.<span class="pl-c1">Ready</span>()
+    fmt.<span class="pl-c1">Printf</span>(<span class="pl-s"><span class="pl-pds">"</span>ready status <span class="pl-c1">%v</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, isReady)
+
+    <span class="pl-c">// get result with 5s timeout</span>
+    res, err = asyncResult.<span class="pl-c1">Get</span>(<span class="pl-c1">5</span> * time.<span class="pl-smi">Second</span>)
+    <span class="pl-k">if</span> err != <span class="pl-c1">nil</span> {
+        fmt.<span class="pl-c1">Println</span>(err)
+    } <span class="pl-k">else</span> {
+        fmt.<span class="pl-c1">Println</span>(res)
+    }
+}</pre></div>
+
+<div class="highlight highlight-source-shell"><pre>go run example/client/main.go</pre></div>
+
+<h2>
+<a id="test" class="anchor" href="#test" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Test</h2>
+
+<p>Monitor Redis Message</p>
+
+<div class="highlight highlight-source-shell"><pre>redis-cli monitor</pre></div>
+
+<h2>
+<a id="sample-celery-task-message" class="anchor" href="#sample-celery-task-message" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Sample Celery Task Message</h2>
+
+<div class="highlight highlight-source-js"><pre>{
+    <span class="pl-s"><span class="pl-pds">"</span>expires<span class="pl-pds">"</span></span><span class="pl-k">:</span> <span class="pl-c1">null</span>,
+    <span class="pl-s"><span class="pl-pds">"</span>utc<span class="pl-pds">"</span></span><span class="pl-k">:</span> <span class="pl-c1">true</span>,
+    <span class="pl-s"><span class="pl-pds">"</span>args<span class="pl-pds">"</span></span><span class="pl-k">:</span> [<span class="pl-c1">5456</span>, <span class="pl-c1">2878</span>],
+    <span class="pl-s"><span class="pl-pds">"</span>chord<span class="pl-pds">"</span></span><span class="pl-k">:</span> <span class="pl-c1">null</span>,
+    <span class="pl-s"><span class="pl-pds">"</span>callbacks<span class="pl-pds">"</span></span><span class="pl-k">:</span> <span class="pl-c1">null</span>,
+    <span class="pl-s"><span class="pl-pds">"</span>errbacks<span class="pl-pds">"</span></span><span class="pl-k">:</span> <span class="pl-c1">null</span>,
+    <span class="pl-s"><span class="pl-pds">"</span>taskset<span class="pl-pds">"</span></span><span class="pl-k">:</span> <span class="pl-c1">null</span>,
+    <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span><span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">"</span>c8535050-68f1-4e18-9f32-f52f1aab6d9b<span class="pl-pds">"</span></span>,
+    <span class="pl-s"><span class="pl-pds">"</span>retries<span class="pl-pds">"</span></span><span class="pl-k">:</span> <span class="pl-c1">0</span>,
+    <span class="pl-s"><span class="pl-pds">"</span>task<span class="pl-pds">"</span></span><span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">"</span>worker.add<span class="pl-pds">"</span></span>,
+    <span class="pl-s"><span class="pl-pds">"</span>timelimit<span class="pl-pds">"</span></span><span class="pl-k">:</span> [<span class="pl-c1">null</span>, <span class="pl-c1">null</span>],
+    <span class="pl-s"><span class="pl-pds">"</span>eta<span class="pl-pds">"</span></span><span class="pl-k">:</span> <span class="pl-c1">null</span>,
+    <span class="pl-s"><span class="pl-pds">"</span>kwargs<span class="pl-pds">"</span></span><span class="pl-k">:</span> {}
+}</pre></div>
+
+<h2>
+<a id="contributing" class="anchor" href="#contributing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Contributing</h2>
+
+<p>You are more than welcome to make any contributions.
+Please create Pull Request for any changes.</p>
+
+<p>I need help on following items:</p>
+
+<ul>
+<li>Supporting other brokers/backends such as RabbitMQ</li>
+<li>Implementing more comprehensive tests</li>
+</ul>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>LICENSE</h2>
+
+<p>The gocelery is offered under MIT license.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/shicky/gocelery">Gocelery</a> is maintained by <a href="https://github.com/shicky">shicky</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
